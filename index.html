@@ -1,0 +1,167 @@
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+    <script src=helpers.js></script>
+    <script src=sprite.js></script>
+    <style type="text/css">
+    canvas {
+        border: 1px solid black;
+    }
+    </style>
+</head>
+
+<body>
+    <canvas width=700 height=700></canvas>
+    <script>
+    const Q1 = 70; // RED CIRCLE
+    const R1 = 300; // GREEN ARM Lower Half
+    const S1 = 150; // ORANGE ARM
+    const T1 = 150; // GREEN ARM Upper Half
+    const Q2 = 84.9;
+    const R2 = 300;
+    const S2 = 150;
+    const T2 = 150;
+    const speed1 = 14.3; // rotation speed 1
+    const speed2 = -2;
+    let a1 = 270; // start angle 1
+    let a2 = 1; 
+
+    let p1 = new Vector(500, 600);
+    let p2 = new Vector(200, 600);
+
+
+
+    const canvas = obj('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function drawPoint(vector, color = 'red', r = 5) {
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(vector.x, vector.y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawLine(v1,v2,color='green',lw=1){
+    	ctx.beginPath();
+    	ctx.strokeStyle = color;
+    	ctx.lineWidth = lw;
+    	ctx.moveTo(v1.x,v1.y);
+    	ctx.lineTo(v2.x,v2.y);
+    	ctx.stroke();
+    }
+
+    let path = [];
+
+    function draw() {
+        setTimeout(draw, 1000 / 60);
+
+        ctx.clearRect(-2, -2, canvas.width + 2, canvas.height + 2);
+        drawPoint(p1);
+        drawPoint(p2);
+
+        drawCircleAround(p1,Q1,'red');
+        drawCircleAround(p2,Q2,'red');
+
+
+        let r1 = Vector.getPointIn(Vector.rad(a1), Q1, p1.x, p1.y);
+        let r2 = Vector.getPointIn(Vector.rad(a2), Q2, p2.x, p2.y);
+
+        drawPoint(r1, 'blue');
+        // drawCircleAround(r1, R1);
+        drawPoint(r2, 'blue');
+        // drawCircleAround(r2, R2);
+
+
+        let ipoints1 = findCircleIntersections({x:r1.x,y:r1.y,radius:R1},{x:r2.x,y:r2.y,radius:R2});
+
+        let i1 = ipoints1[0].y < 600 ? ipoints1[0] : ipoints1[1];
+
+        drawPoint(i1,'green');
+
+        let aj1 = Vector.getPointIn(Vector.rad(Vector.getDir(r1.x-i1.x,r1.y-i1.y)),R1+T1,r1.x,r1.y);
+        let aj2 = Vector.getPointIn(Vector.rad(Vector.getDir(r2.x-i1.x,r2.y-i1.y)),R2+T2,r2.x,r2.y);
+
+        drawPoint(aj1,'cyan');
+        drawPoint(aj2,'cyan');
+        drawLine(r1,aj1);
+        drawLine(r2,aj2);
+
+        // drawCircleAround(aj1,S1,'cyan');
+        // drawCircleAround(aj2,S2,'cyan');
+
+        let ipoints2 = findCircleIntersections({x:aj1.x,y:aj1.y,radius:S1},{x:aj2.x,y:aj2.y,radius:S2})
+        let i2 = ipoints2[0].y < aj1.y ? ipoints2[0] : ipoints2[1];
+
+        drawPoint(i2,'green');
+
+        drawLine(aj1,i2,'orange');
+        drawLine(aj2,i2,'orange');
+
+        path.push(i2);
+
+        drawPath(path,'black');
+
+        a1 += speed1;
+        a2 += speed2;
+
+    }
+
+    function drawPath(path,color){
+    	if(path.length == 0) return;
+    	ctx.lineWidth = 1;
+    	ctx.strokeStyle = color;
+    	ctx.beginPath();
+    	ctx.moveTo(path[0].x,path[0].y);
+    	for(let i=1;i<path.length;i++){
+    		ctx.lineTo(path[i].x,path[i].y);
+    	}
+    	ctx.stroke();
+    }
+
+
+    function drawCircleAround(vector, r, color = 'blue') {
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = color;
+        ctx.arc(vector.x, vector.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    function findCircleIntersections(circle1, circle2) {
+        // Destructuring circle parameters
+        const { x: x1, y: y1, radius: r1 } = circle1;
+        const { x: x2, y: y2, radius: r2 } = circle2;
+
+        // Calculate distance between the centers of the circles
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Check if circles are separate or coincident
+        if (distance > r1 + r2 || distance < Math.abs(r1 - r2)) {
+            return "No intersection points - circles are separate or contained within each other.";
+        }
+
+        // Calculate intersection points
+        const a = (r1 * r1 - r2 * r2 + distance * distance) / (2 * distance);
+        const h = Math.sqrt(r1 * r1 - a * a);
+        const xIntersection1 = x1 + (dx * a) / distance + (dy * h) / distance;
+        const yIntersection1 = y1 + (dy * a) / distance - (dx * h) / distance;
+        const xIntersection2 = x1 + (dx * a) / distance - (dy * h) / distance;
+        const yIntersection2 = y1 + (dy * a) / distance + (dx * h) / distance;
+
+        // Return intersection points
+        return [
+            { x: xIntersection1, y: yIntersection1 },
+            { x: xIntersection2, y: yIntersection2 },
+        ];
+    }
+
+
+
+    draw();
+    </script>
+</body>
+
+</html>
